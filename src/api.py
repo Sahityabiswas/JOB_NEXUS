@@ -1,18 +1,16 @@
 # src/api.py
 # FastAPI Web Application & Interface Dashboard
 
-import json
-from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from recommender import get_graph_recommendations, get_ml_recommendations
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import json
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from recommender import get_graph_recommendations, get_ml_recommendations
-import os
 
 app = FastAPI(title="JOB NEXUS / VISION NEXUS", version="5.0")
 
