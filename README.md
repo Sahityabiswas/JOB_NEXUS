@@ -2,7 +2,7 @@
 
 A career recommendation engine that matches your skills to relevant jobs using TF-IDF vectorization and cosine similarity, with a Neo4j graph backend and an interactive glassmorphic dashboard.
 
-**Live demo**: [https://sahityabiswas.github.io/JOB_NEXUS](https://sahityabiswas.github.io/JOB_NEXUS) (splash) → [https://job-nexus-rt9c.onrender.com](https://job-nexus-rt9c.onrender.com) (app)
+**Live demo**: [https://sahityabiswas.github.io/JOB_NEXUS](https://sahityabiswas.github.io/JOB_NEXUS)
 
 ---
 
@@ -142,13 +142,4 @@ Open **http://localhost:8000** in your browser.
 | `GET /api/recommend?skills=&proficiencies=&mode=&...` | Get job recommendations |
 | `GET /api/graph?skills=&mode=` | Get graph visualization data |
 
----
 
-## Deployment
-
-The app is configured for deployment on **Render**. Push to GitHub and Render auto-deploys from `main`.
-
-Required environment variables in Render:
-- `NEO4J_URI`
-- `NEO4J_USER`
-- `NEO4J_PASS`
