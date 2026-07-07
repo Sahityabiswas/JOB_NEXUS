@@ -44,12 +44,25 @@ def load_courses_and_skills() -> dict:
             }
     return courses
 
-def get_graph_recommendations(user_skills: list, limit: int = 6) -> list:
+PROFICIENCY_WEIGHTS = {1: 0.4, 2: 0.7, 3: 0.9, 4: 1.0}
+DEFAULT_PROFICIENCY = 3
+
+def get_effective_skill_set(user_skills: list, proficiencies: dict = None) -> dict:
+    """Returns a dict mapping lowercase skill -> weight based on proficiency."""
+    prof = proficiencies or {}
+    result = {}
+    for s in user_skills:
+        sl = s.lower()
+        level = prof.get(sl, DEFAULT_PROFICIENCY)
+        result[sl] = PROFICIENCY_WEIGHTS.get(level, PROFICIENCY_WEIGHTS[DEFAULT_PROFICIENCY])
+    return result
+
+def get_graph_recommendations(user_skills: list, limit: int = 6, proficiencies: dict = None) -> list:
     """
-    Ranks jobs by simple set-based skill overlap percentage.
+    Ranks jobs by skill overlap weighted by user proficiency.
     Returns: list of job dicts including match scores, missing skills, and course pathways.
     """
-    user_skill_set = set([s.lower() for s in user_skills])
+    user_skill_weights = get_effective_skill_set(user_skills, proficiencies)
     jobs = load_jobs_and_skills()
     courses = load_courses_and_skills()
     
@@ -61,11 +74,16 @@ def get_graph_recommendations(user_skills: list, limit: int = 6) -> list:
         job_skills_lower = [s.lower() for s in job_skills]
         job_skill_set = set(job_skills_lower)
         
-        # Calculate overlap
-        overlap = user_skill_set & job_skill_set
-        score = len(overlap) / len(job_skill_set) if job_skill_set else 0
+        # Calculate proficiency-weighted score
+        overlap = user_skill_weights.keys() & job_skill_set
+        if overlap:
+            weighted_sum = sum(user_skill_weights[sk] for sk in overlap)
+        else:
+            weighted_sum = 0
+        score = weighted_sum / len(job_skill_set) if job_skill_set else 0
         
         # Determine missing skills
+        user_skill_set = set(user_skill_weights.keys())
         missing_lower = job_skill_set - user_skill_set
         
         # Map back to original casing
@@ -114,11 +132,12 @@ def get_graph_recommendations(user_skills: list, limit: int = 6) -> list:
         return positive_scored[:limit]
     return scored[:limit]
 
-def get_ml_recommendations(user_skills: list, limit: int = 6) -> list:
+def get_ml_recommendations(user_skills: list, limit: int = 6, proficiencies: dict = None) -> list:
     """
-    Ranks jobs using TF-IDF vectorization and Cosine Similarity.
+    Ranks jobs using TF-IDF vectorization and Cosine Similarity, adjusted by proficiency.
     Returns: list of job dicts including match scores, missing skills, and course pathways.
     """
+    user_skill_weights = get_effective_skill_set(user_skills, proficiencies)
     jobs = load_jobs_and_skills()
     if not jobs or not user_skills:
         return []
@@ -158,6 +177,15 @@ def get_ml_recommendations(user_skills: list, limit: int = 6) -> list:
         # Overlaps
         overlap = user_skill_set & job_skill_set
         missing_lower = job_skill_set - user_skill_set
+
+        # Proficiency adjustment factor
+        if overlap:
+            raw_match_count = len(overlap)
+            weighted_sum = sum(user_skill_weights.get(sk, 0.9) for sk in overlap)
+            prof_factor = weighted_sum / raw_match_count
+        else:
+            prof_factor = 1.0
+        score = float(score) * prof_factor
         
         missing_skills = [s for s in job_skills if s.lower() in missing_lower]
         matched_skills = [s for s in job_skills if s.lower() in overlap]

@@ -288,6 +288,29 @@
             opacity: 1;
         }
 
+        .prof-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-left: 2px;
+            opacity: 0.7;
+            transition: all 0.15s;
+            user-select: none;
+            letter-spacing: 0.5px;
+        }
+
+        .prof-badge:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .prof-badge.p1 { background: rgba(239,68,68,0.25); color: #fca5a5; }
+        .prof-badge.p2 { background: rgba(251,191,36,0.25); color: #fcd34d; }
+        .prof-badge.p3 { background: rgba(16,185,129,0.25); color: #6ee7b7; }
+        .prof-badge.p4 { background: rgba(139,92,246,0.25); color: #c4b5fd; }
+
         .tag-text-input {
             flex: 1;
             min-width: 120px;
@@ -1003,6 +1026,9 @@
         let currentName = "";
         let currentSkillsArray = [];
         let skillOriginMap = {};
+        let proficiencyMap = {};
+        const PROF_LABELS = {1: "B", 2: "I", 3: "A", 4: "E"};
+        const PROF_NAMES = {1: "Beginner", 2: "Intermediate", 3: "Advanced", 4: "Expert"};
         let network = null;
         let autocompleteDebounce = null;
         let filterState = { category: '', location: '', company: '', sort: 'score_desc' };
@@ -1019,6 +1045,17 @@
             return document.getElementById('skillAutocomplete');
         }
 
+        function getProf(skill) {
+            return proficiencyMap[skill.toLowerCase()] || 3;
+        }
+
+        function cycleProf(skill) {
+            const key = skill.toLowerCase();
+            const cur = proficiencyMap[key] || 3;
+            proficiencyMap[key] = cur >= 4 ? 1 : cur + 1;
+            renderSkillChips();
+        }
+
         function renderSkillChips() {
             const container = document.getElementById('tagChips');
             container.innerHTML = currentSkillsArray.map((s, i) => {
@@ -1026,8 +1063,12 @@
                 const orig = skillOriginMap[lower];
                 const title = orig ? `Recognized as: ${s}` : '';
                 const display = orig ? `${s} (${orig})` : s;
+                const prof = getProf(s);
+                const profLabel = PROF_LABELS[prof] || "A";
+                const profName = PROF_NAMES[prof] || "Advanced";
                 return `<span class="tag-skill-chip" title="${title}">
                     ${display}
+                    <span class="prof-badge p${prof}" title="${profName} — click to cycle" onclick="event.stopPropagation(); cycleProf('${s.replace(/'/g, "\\'")}')">${profLabel}</span>
                     <span class="chip-remove" onclick="event.stopPropagation(); removeSkill(${i})">✕</span>
                 </span>`;
             }).join('');
@@ -1044,6 +1085,9 @@
             const norm = s.trim();
             if (!currentSkillsArray.map(x => x.toLowerCase()).includes(norm.toLowerCase())) {
                 currentSkillsArray.push(norm);
+                if (!proficiencyMap[norm.toLowerCase()]) {
+                    proficiencyMap[norm.toLowerCase()] = 3;
+                }
                 if (original && original.toLowerCase() !== norm.toLowerCase()) {
                     skillOriginMap[norm.toLowerCase()] = original;
                 }
@@ -1198,7 +1242,7 @@
         }
 
         function shareProfile() {
-            const url = `${window.location.origin}/ui/search?name=${encodeURIComponent(currentName)}&skills=${encodeURIComponent(getSkillsString())}`;
+            const url = `${window.location.origin}/ui/search?name=${encodeURIComponent(currentName)}&skills=${encodeURIComponent(getSkillsString())}&proficiencies=${encodeURIComponent(getProficienciesString())}`;
             navigator.clipboard.writeText(url).then(() => {
                 showToast('Profile link copied!');
             }).catch(() => {
@@ -1292,6 +1336,10 @@
             return currentSkillsArray.join(', ');
         }
 
+        function getProficienciesString() {
+            return currentSkillsArray.map(s => `${encodeURIComponent(s)}:${getProf(s)}`).join(',');
+        }
+
         async function fetchFilters() {
             try {
                 const res = await fetch(`${API_BASE}/api/filters`);
@@ -1328,7 +1376,7 @@
 
         async function loadRecommendations() {
             const skillsStr = getSkillsString();
-            const params = new URLSearchParams({ skills: skillsStr, mode: 'ml' });
+            const params = new URLSearchParams({ skills: skillsStr, proficiencies: getProficienciesString(), mode: 'ml' });
             if (filterState.category) params.set('category', filterState.category);
             if (filterState.location) params.set('location', filterState.location);
             if (filterState.company) params.set('company', filterState.company);
@@ -1428,7 +1476,7 @@
         async function renderGraph() {
             const container = document.getElementById("graph-container");
             try {
-                const response = await fetch(`${API_BASE}/api/graph?skills=${encodeURIComponent(getSkillsString())}&mode=ml`);
+                const response = await fetch(`${API_BASE}/api/graph?skills=${encodeURIComponent(getSkillsString())}&proficiencies=${encodeURIComponent(getProficienciesString())}&mode=ml`);
                 const graphData = await response.json();
 
                 // Style the network graph nodes for a clean glow dark theme
@@ -1593,13 +1641,22 @@
                 const finalName = nameParam || 'Guest';
                 document.getElementById('nameInput').value = finalName;
                 const rawSkills = skillsParam.split(',').map(s => s.trim()).filter(Boolean);
+                const profParam = params.get('proficiencies') || '';
+                const profPairs = {};
+                profParam.split(',').forEach(p => {
+                    const parts = p.split(':');
+                    if (parts.length === 2) profPairs[parts[0].toLowerCase()] = parseInt(parts[1]) || 3;
+                });
                 const promises = rawSkills.map(s => normalizeSkill(s).then(data => ({ canonical: data.canonical, original: data.original })));
                 Promise.all(promises).then(results => {
                     results.forEach(r => {
                         if (r.canonical && !currentSkillsArray.map(x => x.toLowerCase()).includes(r.canonical.toLowerCase())) {
                             currentSkillsArray.push(r.canonical);
-                            if (r.original.toLowerCase() !== r.canonical.toLowerCase()) {
-                                skillOriginMap[r.canonical.toLowerCase()] = r.original;
+                            const cl = r.canonical.toLowerCase();
+                            if (profPairs[cl]) proficiencyMap[cl] = profPairs[cl];
+                            else if (!proficiencyMap[cl]) proficiencyMap[cl] = 3;
+                            if (r.original.toLowerCase() !== cl) {
+                                skillOriginMap[cl] = r.original;
                             }
                         }
                     });

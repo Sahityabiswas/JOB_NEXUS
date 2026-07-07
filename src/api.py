@@ -158,9 +158,25 @@ def get_filters():
         filters["companies"] = sorted([c for c in result.single()["companies"] if c])
     return JSONResponse(content=filters)
 
+def parse_proficiencies(prof_str: str) -> dict:
+    """Parses 'skill:level,skill:level' into {skill_lower: level}."""
+    result = {}
+    if not prof_str:
+        return result
+    for part in prof_str.split(","):
+        part = part.strip()
+        if ":" in part:
+            skill, level = part.rsplit(":", 1)
+            try:
+                result[skill.strip().lower()] = int(level.strip())
+            except ValueError:
+                pass
+    return result
+
 @app.get("/api/recommend")
 def get_recommendations_json(
     skills: str = Query(...),
+    proficiencies: str = Query(""),
     mode: str = Query("ml"),
     category: str = Query(""),
     location: str = Query(""),
@@ -168,10 +184,11 @@ def get_recommendations_json(
     sort_by: str = Query("score_desc")
 ):
     user_skill_list = parse_and_normalize_skills(skills)
+    prof_dict = parse_proficiencies(proficiencies)
     if mode == "ml":
-        recs = get_ml_recommendations(user_skill_list, limit=50)
+        recs = get_ml_recommendations(user_skill_list, limit=50, proficiencies=prof_dict)
     else:
-        recs = get_graph_recommendations(user_skill_list, limit=50)
+        recs = get_graph_recommendations(user_skill_list, limit=50, proficiencies=prof_dict)
 
     # Apply filters
     if category:
