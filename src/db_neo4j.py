@@ -23,6 +23,8 @@ NEO4J_URI = os.getenv("NEO4J_URI", config.get("neo4j_uri", "bolt://localhost:768
 NEO4J_USER = os.getenv("NEO4J_USER", config.get("neo4j_user", "neo4j"))
 NEO4J_PASS = os.getenv("NEO4J_PASS", config.get("neo4j_pass", "YOUR_PASSWORD_HERE"))
 
+# SSL unverified context for +ssc connections
+_ssl_context = ssl._create_unverified_context()
 
 _driver = None
 
@@ -30,7 +32,11 @@ def get_driver():
     """Returns the Neo4j database driver connection pool singleton."""
     global _driver
     if _driver is None:
-        _driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASS))
+        _driver = GraphDatabase.driver(
+            NEO4J_URI,
+            auth=(NEO4J_USER, NEO4J_PASS),
+            ssl_context=_ssl_context
+        )
     return _driver
 
 def close_driver():

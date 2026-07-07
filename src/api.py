@@ -14,6 +14,22 @@ from recommender import get_graph_recommendations, get_ml_recommendations
 
 app = FastAPI(title="JOB NEXUS / VISION NEXUS", version="5.0")
 
+
+@app.on_event("startup")
+def startup_check():
+    """Verify Neo4j connection on startup."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    try:
+        from db_neo4j import get_driver
+        driver = get_driver()
+        with driver.session() as session:
+            session.run("RETURN 1")
+        logging.info("[Startup] Neo4j connection OK")
+    except Exception as e:
+        logging.error(f"[Startup] Neo4j connection FAILED: {e}")
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,61 +65,61 @@ def parse_and_normalize_skills(skills: str) -> list:
 
 @app.get("/api/graph")
 def get_graph_data(skills: str = Query(...), mode: str = Query("ml")):
-    user_skill_list = parse_and_normalize_skills(skills)
-    
-    if mode == "ml":
-        recommendations = get_ml_recommendations(user_skill_list, limit=6)
-    else:
-        recommendations = get_graph_recommendations(user_skill_list, limit=6)
+    try:
+        user_skill_list = parse_and_normalize_skills(skills)
         
-    nodes = []
-    edges = []
-    
-    # 1. Add User Node
-    nodes.append({"id": "user", "label": "You", "group": "user", "title": "Guest Profile"})
-    
-    # Track existing nodes to prevent duplication
-    seen_nodes = {"user"}
-    
-    # 2. Add User Skills Nodes and Edges
-    for s in user_skill_list:
-        node_id = f"skill_{s.lower()}"
-        if node_id not in seen_nodes:
-            nodes.append({"id": node_id, "label": s, "group": "user_skill"})
-            seen_nodes.add(node_id)
-        edges.append({"from": "user", "to": node_id, "label": "has"})
-        
-    # 3. Process Recommendations
-    for r in recommendations:
-        job_node_id = f"job_{r['job_id']}"
-        if job_node_id not in seen_nodes:
-            nodes.append({"id": job_node_id, "label": f"{r['title']}\\n({r['company']})", "group": "job"})
-            seen_nodes.add(job_node_id)
+        if mode == "ml":
+            recommendations = get_ml_recommendations(user_skill_list, limit=6)
+        else:
+            recommendations = get_graph_recommendations(user_skill_list, limit=6)
             
-        # Draw edges from matching user skills to Job
-        for ms in r["matched"]:
-            skill_node_id = f"skill_{ms.lower()}"
-            if skill_node_id in seen_nodes:
-                edges.append({"from": skill_node_id, "to": job_node_id, "label": "matches"})
+        nodes = []
+        edges = []
+        
+        nodes.append({"id": "user", "label": "You", "group": "user", "title": "Guest Profile"})
+        seen_nodes = {"user"}
+        
+        for s in user_skill_list:
+            node_id = f"skill_{s.lower()}"
+            if node_id not in seen_nodes:
+                nodes.append({"id": node_id, "label": s, "group": "user_skill"})
+                seen_nodes.add(node_id)
+            edges.append({"from": "user", "to": node_id, "label": "has"})
+            
+        for r in recommendations:
+            job_node_id = f"job_{r['job_id']}"
+            if job_node_id not in seen_nodes:
+                nodes.append({"id": job_node_id, "label": f"{r['title']}\\n({r['company']})", "group": "job"})
+                seen_nodes.add(job_node_id)
                 
-        # Draw edges from missing skills to Job
-        for mis in r["missing"]:
-            missing_node_id = f"skill_{mis.lower()}"
-            if missing_node_id not in seen_nodes:
-                nodes.append({"id": missing_node_id, "label": mis, "group": "missing_skill"})
-                seen_nodes.add(missing_node_id)
-            edges.append({"from": missing_node_id, "to": job_node_id, "label": "requires", "dashes": True})
-            
-            # Connect recommended courses to the missing skills they cover
-            for c in r["courses"]:
-                if mis in c["skills_covered"]:
-                    course_node_id = f"course_{c['course_id']}"
-                    if course_node_id not in seen_nodes:
-                        nodes.append({"id": course_node_id, "label": c["course_name"], "group": "course"})
-                        seen_nodes.add(course_node_id)
-                    edges.append({"from": course_node_id, "to": missing_node_id, "label": "teaches"})
+            for ms in r["matched"]:
+                skill_node_id = f"skill_{ms.lower()}"
+                if skill_node_id in seen_nodes:
+                    edges.append({"from": skill_node_id, "to": job_node_id, "label": "matches"})
                     
-    return JSONResponse(content={"nodes": nodes, "edges": edges})
+            for mis in r["missing"]:
+                missing_node_id = f"skill_{mis.lower()}"
+                if missing_node_id not in seen_nodes:
+                    nodes.append({"id": missing_node_id, "label": mis, "group": "missing_skill"})
+                    seen_nodes.add(missing_node_id)
+                edges.append({"from": missing_node_id, "to": job_node_id, "label": "requires", "dashes": True})
+                
+                for c in r["courses"]:
+                    if mis in c["skills_covered"]:
+                        course_node_id = f"course_{c['course_id']}"
+                        if course_node_id not in seen_nodes:
+                            nodes.append({"id": course_node_id, "label": c["course_name"], "group": "course"})
+                            seen_nodes.add(course_node_id)
+                        edges.append({"from": course_node_id, "to": missing_node_id, "label": "teaches"})
+                        
+        return JSONResponse(content={"nodes": nodes, "edges": edges})
+    except Exception as e:
+        import logging
+        logging.error(f"[Graph] Error: {e}")
+        return JSONResponse(
+            content={"error": f"Database connection failed: {e}"},
+            status_code=500
+        )
  
 @app.get("/api/skills/search")
 def search_skills(q: str = Query("")):
@@ -144,17 +160,25 @@ def get_all_skills():
 
 @app.get("/api/filters")
 def get_filters():
-    from db_neo4j import get_driver
-    driver = get_driver()
-    filters = {"categories": [], "locations": [], "companies": []}
-    with driver.session() as session:
-        result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.category) AS categories")
-        filters["categories"] = sorted([c for c in result.single()["categories"] if c])
-        result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.location) AS locations")
-        filters["locations"] = sorted([l for l in result.single()["locations"] if l])
-        result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.company) AS companies")
-        filters["companies"] = sorted([c for c in result.single()["companies"] if c])
-    return JSONResponse(content=filters)
+    try:
+        from db_neo4j import get_driver
+        driver = get_driver()
+        filters = {"categories": [], "locations": [], "companies": []}
+        with driver.session() as session:
+            result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.category) AS categories")
+            filters["categories"] = sorted([c for c in result.single()["categories"] if c])
+            result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.location) AS locations")
+            filters["locations"] = sorted([l for l in result.single()["locations"] if l])
+            result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.company) AS companies")
+            filters["companies"] = sorted([c for c in result.single()["companies"] if c])
+        return JSONResponse(content=filters)
+    except Exception as e:
+        import logging
+        logging.error(f"[Filters] Error: {e}")
+        return JSONResponse(
+            content={"error": f"Database connection failed: {e}"},
+            status_code=500
+        )
 
 def parse_proficiencies(prof_str: str) -> dict:
     """Parses 'skill:level,skill:level' into {skill_lower: level}."""
@@ -181,34 +205,42 @@ def get_recommendations_json(
     company: str = Query(""),
     sort_by: str = Query("score_desc")
 ):
-    user_skill_list = parse_and_normalize_skills(skills)
-    prof_dict = parse_proficiencies(proficiencies)
-    if mode == "ml":
-        recs = get_ml_recommendations(user_skill_list, limit=50, proficiencies=prof_dict)
-    else:
-        recs = get_graph_recommendations(user_skill_list, limit=50, proficiencies=prof_dict)
+    try:
+        user_skill_list = parse_and_normalize_skills(skills)
+        prof_dict = parse_proficiencies(proficiencies)
+        if mode == "ml":
+            recs = get_ml_recommendations(user_skill_list, limit=50, proficiencies=prof_dict)
+        else:
+            recs = get_graph_recommendations(user_skill_list, limit=50, proficiencies=prof_dict)
 
-    # Apply filters
-    if category:
-        recs = [r for r in recs if r.get("category", "").lower() == category.lower()]
-    if location:
-        loc_lower = location.lower()
-        recs = [r for r in recs if loc_lower in r.get("location", "").lower()]
-    if company:
-        comp_lower = company.lower()
-        recs = [r for r in recs if comp_lower in r.get("company", "").lower()]
+        # Apply filters
+        if category:
+            recs = [r for r in recs if r.get("category", "").lower() == category.lower()]
+        if location:
+            loc_lower = location.lower()
+            recs = [r for r in recs if loc_lower in r.get("location", "").lower()]
+        if company:
+            comp_lower = company.lower()
+            recs = [r for r in recs if comp_lower in r.get("company", "").lower()]
 
-    # Apply sort
-    if sort_by == "score_asc":
-        recs.sort(key=lambda x: x["score"])
-    elif sort_by == "title_asc":
-        recs.sort(key=lambda x: x.get("title", "").lower())
-    elif sort_by == "title_desc":
-        recs.sort(key=lambda x: x.get("title", "").lower(), reverse=True)
-    else:
-        recs.sort(key=lambda x: x["score"], reverse=True)
+        # Apply sort
+        if sort_by == "score_asc":
+            recs.sort(key=lambda x: x["score"])
+        elif sort_by == "title_asc":
+            recs.sort(key=lambda x: x.get("title", "").lower())
+        elif sort_by == "title_desc":
+            recs.sort(key=lambda x: x.get("title", "").lower(), reverse=True)
+        else:
+            recs.sort(key=lambda x: x["score"], reverse=True)
 
-    return JSONResponse(content={"recommendations": recs[:6]})
+        return JSONResponse(content={"recommendations": recs[:6]})
+    except Exception as e:
+        import logging
+        logging.error(f"[Recommend] Error: {e}")
+        return JSONResponse(
+            content={"error": f"Database connection failed: {e}. Check that Neo4j AuraDB credentials are set in Render environment variables."},
+            status_code=500
+        )
 
 if __name__ == "__main__":
     import uvicorn
