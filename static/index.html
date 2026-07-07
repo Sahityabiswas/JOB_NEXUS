@@ -496,6 +496,52 @@
             color: white;
         }
 
+        .btn-share {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+            margin-right: 16px;
+        }
+
+        .btn-share:hover {
+            color: var(--accent-cyan);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(10, 10, 20, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: var(--accent-green);
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
         /* Profile card */
         .profile-card {
             padding: 30px;
@@ -881,7 +927,10 @@
         <div id="dashboard-view" style="display:none;">
             <div class="dashboard-header">
                 <h1 class="gradient-title" style="font-size:3rem;">VISION NEXUS</h1>
-                <button class="btn-back" onclick="goBack()">← Edit Profile</button>
+                <div style="display:flex;align-items:center;">
+                    <button class="btn-share" onclick="shareProfile()">↗ Share</button>
+                    <button class="btn-back" onclick="goBack()">← Edit Profile</button>
+                </div>
             </div>
             
             <!-- User Profile card -->
@@ -923,6 +972,8 @@
             </div>
         </div>
     </div>
+
+    <div class="toast" id="toast"></div>
 
     <script>
         const API_BASE = window.location.origin;
@@ -1091,6 +1142,22 @@
             }
             currentName = nameVal;
             loadDashboard();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function shareProfile() {
+            const url = `${window.location.origin}/ui/search?name=${encodeURIComponent(currentName)}&skills=${encodeURIComponent(getSkillsString())}`;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Profile link copied!');
+            }).catch(() => {
+                showToast('Copy failed. URL: ' + url);
+            });
         }
 
         function goBack() {
