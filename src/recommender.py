@@ -47,6 +47,17 @@ def load_courses_and_skills() -> dict:
 PROFICIENCY_WEIGHTS = {1: 0.4, 2: 0.7, 3: 0.9, 4: 1.0}
 DEFAULT_PROFICIENCY = 3
 
+def compute_confidence(matched_count: int, total_required: int, score: float) -> str:
+    """Determine confidence level based on overlap and score."""
+    if total_required < 1:
+        return "low"
+    ratio = matched_count / total_required
+    if matched_count >= 3 and ratio > 0.5:
+        return "high"
+    if matched_count >= 1 and ratio > 0.25:
+        return "medium"
+    return "low"
+
 def get_effective_skill_set(user_skills: list, proficiencies: dict = None) -> dict:
     """Returns a dict mapping lowercase skill -> weight based on proficiency."""
     prof = proficiencies or {}
@@ -114,6 +125,7 @@ def get_graph_recommendations(user_skills: list, limit: int = 6, proficiencies: 
             "location": jdata["location"],
             "category": jdata["category"],
             "score": round(score, 4),
+            "confidence": compute_confidence(len(overlap), len(job_skills), score),
             "matched": matched_skills,
             "missing": missing_skills,
             "courses": recommended_courses[:3],
@@ -213,6 +225,7 @@ def get_ml_recommendations(user_skills: list, limit: int = 6, proficiencies: dic
             "location": jdata["location"],
             "category": jdata["category"],
             "score": round(float(score), 4),
+            "confidence": compute_confidence(len(overlap), len(job_skills), float(score)),
             "matched": matched_skills,
             "missing": missing_skills,
             "courses": recommended_courses[:3],

@@ -520,6 +520,20 @@
             color: white;
         }
 
+        .conf-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
+        .conf-dot.high { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+        .conf-dot.medium { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+        .conf-dot.low { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+
         .btn-share {
             background: none;
             border: none;
@@ -1271,7 +1285,7 @@
                     <tr style="border-bottom: 1px solid #333;">
                         <td style="padding: 10px 8px; color: #f8fafc;">${j.title}</td>
                         <td style="padding: 10px 8px; color: #94a3b8;">${j.company}</td>
-                        <td style="padding: 10px 8px; color: #10b981; font-weight: 700; text-align: center;">${scorePct}%</td>
+                        <td style="padding: 10px 8px; color: #10b981; font-weight: 700; text-align: center;">${scorePct}% <span style="font-weight:400;font-size:9px;color:#94a3b8;">(${j.confidence || 'low'})</span></td>
                         <td style="padding: 10px 8px; color: #94a3b8; max-width: 200px;">${matched.length ? matched.join(', ') : '—'}</td>
                         <td style="padding: 10px 8px; color: #ef4444; max-width: 200px;">${missing.length ? missing.join(', ') : '—'}</td>
                         <td style="padding: 10px 8px; color: #94a3b8; max-width: 180px;">${courses.length ? courses.map(c => c.course_name).join('; ') : '—'}</td>
@@ -1446,6 +1460,9 @@
                     </div>
                 ` : '';
 
+                const conf = j.confidence || 'low';
+                const confLabel = {high: 'High confidence — strong skill overlap', medium: 'Medium confidence — moderate skill overlap', low: 'Low confidence — limited skill overlap'};
+
                 return `
                     <div class="glass job-card" onclick="openDrawer('${j.job_id}')">
                         <div>
@@ -1454,7 +1471,7 @@
                                     <h3 class="job-title">${j.title}</h3>
                                     <div class="job-meta">${j.company} • ${j.location}</div>
                                 </div>
-                                <div class="match-badge">${scorePct}% Match${breakdownHtml}</div>
+                                <div class="match-badge"><span class="conf-dot ${conf}" title="${confLabel[conf]}"></span>${scorePct}% Match${breakdownHtml}</div>
                             </div>
                             
                             <div class="progress-wrapper">
