@@ -926,6 +926,48 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .landing-card { padding: 24px 16px; margin-top: 20px; }
+            .gradient-title { font-size: 2.2rem !important; }
+            .landing-subtitle { font-size: 0.85rem; }
+            .dashboard-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+            .dashboard-header h1 { font-size: 2rem !important; }
+            .dashboard-header div { flex-wrap: wrap; gap: 6px; }
+            .filter-toolbar { flex-direction: column; }
+            .filter-select { width: 100%; min-width: unset; }
+            .job-grid { grid-template-columns: 1fr; }
+            .profile-card { padding: 20px; }
+            .profile-id { font-size: 0.7rem; }
+            .profile-name { font-size: 1.2rem; }
+            .graph-section { padding: 16px; }
+            #graph-container { height: 300px; }
+            .drawer { width: 100% !important; padding: 20px 16px; }
+            .btn-share, .btn-pdf { font-size: 0.8rem; margin-right: 8px; }
+            .tag-input-wrapper { min-height: 60px; padding: 8px 10px; }
+            .tag-skill-chip { font-size: 0.72rem; padding: 3px 8px; }
+            .section-title { font-size: 1.1rem; }
+            .job-card { padding: 16px; }
+            .job-title { font-size: 0.95rem; }
+            .match-badge { font-size: 0.75rem; padding: 4px 10px; }
+            .btn-action { padding: 14px 20px; font-size: 0.9rem; }
+            .breakdown-tooltip { right: 0; left: auto; min-width: 180px; }
+            .toast { font-size: 0.8rem; padding: 10px 16px; white-space: normal; max-width: 90%; }
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 10px; }
+            .landing-card { padding: 20px 12px; margin-top: 12px; }
+            .gradient-title { font-size: 1.6rem !important; }
+            .dashboard-header h1 { font-size: 1.4rem !important; }
+            .profile-name { font-size: 1rem; }
+            .drawer { padding: 16px 12px; }
+            .drawer h2 { font-size: 1.4rem !important; }
+            .tag-input-wrapper { min-height: 50px; }
+            .autocomplete-dropdown { max-height: 180px; }
+        }
     </style>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </head>
