@@ -128,14 +128,56 @@ def get_all_skills():
     from normalize import CANONICAL_SKILLS
     return JSONResponse({"skills": CANONICAL_SKILLS})
 
+@app.get("/api/filters")
+def get_filters():
+    from db_neo4j import get_driver
+    driver = get_driver()
+    filters = {"categories": [], "locations": [], "companies": []}
+    with driver.session() as session:
+        result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.category) AS categories")
+        filters["categories"] = sorted([c for c in result.single()["categories"] if c])
+        result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.location) AS locations")
+        filters["locations"] = sorted([l for l in result.single()["locations"] if l])
+        result = session.run("MATCH (j:Job) RETURN collect(DISTINCT j.company) AS companies")
+        filters["companies"] = sorted([c for c in result.single()["companies"] if c])
+    return JSONResponse(content=filters)
+
 @app.get("/api/recommend")
-def get_recommendations_json(skills: str = Query(...), mode: str = Query("ml")):
+def get_recommendations_json(
+    skills: str = Query(...),
+    mode: str = Query("ml"),
+    category: str = Query(""),
+    location: str = Query(""),
+    company: str = Query(""),
+    sort_by: str = Query("score_desc")
+):
     user_skill_list = parse_and_normalize_skills(skills)
     if mode == "ml":
-        recs = get_ml_recommendations(user_skill_list, limit=6)
+        recs = get_ml_recommendations(user_skill_list, limit=50)
     else:
-        recs = get_graph_recommendations(user_skill_list, limit=6)
-    return JSONResponse(content={"recommendations": recs})
+        recs = get_graph_recommendations(user_skill_list, limit=50)
+
+    # Apply filters
+    if category:
+        recs = [r for r in recs if r.get("category", "").lower() == category.lower()]
+    if location:
+        loc_lower = location.lower()
+        recs = [r for r in recs if loc_lower in r.get("location", "").lower()]
+    if company:
+        comp_lower = company.lower()
+        recs = [r for r in recs if comp_lower in r.get("company", "").lower()]
+
+    # Apply sort
+    if sort_by == "score_asc":
+        recs.sort(key=lambda x: x["score"])
+    elif sort_by == "title_asc":
+        recs.sort(key=lambda x: x.get("title", "").lower())
+    elif sort_by == "title_desc":
+        recs.sort(key=lambda x: x.get("title", "").lower(), reverse=True)
+    else:
+        recs.sort(key=lambda x: x["score"], reverse=True)
+
+    return JSONResponse(content={"recommendations": recs[:6]})
 
 if __name__ == "__main__":
     import uvicorn

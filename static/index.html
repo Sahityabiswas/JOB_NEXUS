@@ -404,6 +404,69 @@
             transform: translateY(0);
         }
 
+        /* Filter Toolbar */
+        .filter-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            min-width: 150px;
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+
+        .filter-select:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+        }
+
+        .filter-select option {
+            background: #0f0f1a;
+            color: var(--text-main);
+        }
+
+        .btn-reset {
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-reset:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .filter-count {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
         /* Dashboard elements */
         .dashboard-header {
             display: flex;
@@ -779,6 +842,25 @@
             <!-- Job Opportunities grid -->
             <div class="opportunities-section">
                 <h2 class="section-title">Top Matched Opportunities</h2>
+                <div class="filter-toolbar" id="filterToolbar">
+                    <select class="filter-select" id="filterCategory" onchange="applyFilters()">
+                        <option value="">All Categories</option>
+                    </select>
+                    <select class="filter-select" id="filterLocation" onchange="applyFilters()">
+                        <option value="">All Locations</option>
+                    </select>
+                    <select class="filter-select" id="filterCompany" onchange="applyFilters()">
+                        <option value="">All Companies</option>
+                    </select>
+                    <select class="filter-select" id="filterSort" onchange="applyFilters()">
+                        <option value="score_desc">Match % (high to low)</option>
+                        <option value="score_asc">Match % (low to high)</option>
+                        <option value="title_asc">Title (A-Z)</option>
+                        <option value="title_desc">Title (Z-A)</option>
+                    </select>
+                    <button class="btn-reset" onclick="resetFilters()">Reset</button>
+                    <span class="filter-count" id="filterCount"></span>
+                </div>
                 <div id="job-cards-container" class="job-grid"></div>
             </div>
             
@@ -796,6 +878,7 @@
         let currentSkillsArray = [];
         let network = null;
         let autocompleteDebounce = null;
+        let filterState = { category: '', location: '', company: '', sort: 'score_desc' };
 
         // Populate popular chips
         const popularSkills = ["Excel", "Python", "SQL", "Git", "Docker", "Kubernetes", "Machine Learning", "TensorFlow", "Deep Learning", "Java", "JavaScript", "React", "AWS", "Tableau", "Power BI"];
@@ -967,39 +1050,80 @@
             return currentSkillsArray.join(', ');
         }
 
+        async function fetchFilters() {
+            try {
+                const res = await fetch(`${API_BASE}/api/filters`);
+                const data = await res.json();
+                populateSelect('filterCategory', data.categories, 'All Categories');
+                populateSelect('filterLocation', data.locations, 'All Locations');
+                populateSelect('filterCompany', data.companies, 'All Companies');
+            } catch (e) {
+                console.error("Failed to load filters:", e);
+            }
+        }
+
+        function populateSelect(id, items, placeholder) {
+            const sel = document.getElementById(id);
+            sel.innerHTML = `<option value="">${placeholder}</option>` + items.map(i => `<option value="${i}">${i}</option>`).join('');
+        }
+
+        function applyFilters() {
+            filterState.category = document.getElementById('filterCategory').value;
+            filterState.location = document.getElementById('filterLocation').value;
+            filterState.company = document.getElementById('filterCompany').value;
+            filterState.sort = document.getElementById('filterSort').value;
+            loadRecommendations();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterLocation').value = '';
+            document.getElementById('filterCompany').value = '';
+            document.getElementById('filterSort').value = 'score_desc';
+            filterState = { category: '', location: '', company: '', sort: 'score_desc' };
+            loadRecommendations();
+        }
+
+        async function loadRecommendations() {
+            const skillsStr = getSkillsString();
+            const params = new URLSearchParams({ skills: skillsStr, mode: 'ml' });
+            if (filterState.category) params.set('category', filterState.category);
+            if (filterState.location) params.set('location', filterState.location);
+            if (filterState.company) params.set('company', filterState.company);
+            if (filterState.sort) params.set('sort_by', filterState.sort);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/recommend?${params}`);
+                const data = await response.json();
+                window.jobsData = {};
+                if (data.recommendations) {
+                    data.recommendations.forEach(j => { window.jobsData[j.job_id] = j; });
+                }
+                renderJobCards(data.recommendations);
+                document.getElementById('filterCount').textContent = data.recommendations.length + ' results';
+            } catch (e) {
+                console.error("Error loading recommendations:", e);
+                document.getElementById("job-cards-container").innerHTML = "<p style='color:var(--text-dim)'>Failed to load recommendations. Make sure FastAPI server is running.</p>";
+            }
+        }
+
         async function loadDashboard() {
             showLoading();
             
             document.getElementById("landing-view").style.display = "none";
             document.getElementById("dashboard-view").style.display = "block";
 
+            // 0. Fetch filter options
+            await fetchFilters();
+
             // 1. Update Profile Display
             document.getElementById("user-profile-name").innerText = currentName;
-            
-            // Render user skills chips in profile card
             document.getElementById("user-skills-container").innerHTML = currentSkillsArray.map(s => `
                 <span class="tag tag-skill">${s}</span>
             `).join('');
 
-            const skillsStr = getSkillsString();
-
-            // 2. Fetch Job Recommendations (default to ML mode always)
-            try {
-                const response = await fetch(`${API_BASE}/api/recommend?skills=${encodeURIComponent(skillsStr)}&mode=ml`);
-                const data = await response.json();
-                
-                window.jobsData = {};
-                if (data.recommendations) {
-                    data.recommendations.forEach(j => {
-                        window.jobsData[j.job_id] = j;
-                    });
-                }
-                
-                renderJobCards(data.recommendations);
-            } catch (e) {
-                console.error("Error loading recommendations:", e);
-                document.getElementById("job-cards-container").innerHTML = "<p style='color:var(--text-dim)'>Failed to load recommendations. Make sure FastAPI server is running.</p>";
-            }
+            // 2. Fetch recommendations with filters
+            await loadRecommendations();
 
             // 3. Render Vis.js Graph
             await renderGraph();
