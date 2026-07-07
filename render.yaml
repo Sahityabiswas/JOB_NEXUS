@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: job-nexus
+    runtime: python
+    repo: https://github.com/Sahityabiswas/JOB_NEXUS
+    branch: main
+    buildCommand: pip install -r requirements.txt && python -m spacy download en_core_web_sm
+    startCommand: uvicorn src.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USER
+        sync: false
+      - key: NEO4J_PASS
+        sync: false
