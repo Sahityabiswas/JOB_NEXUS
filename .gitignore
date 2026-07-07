@@ -15,6 +15,9 @@ data/*.db
 # Local startup scripts (contain credentials)
 start_api.ps1
 
+# Database configuration (contains credentials)
+config.json
+
 # Editor configurations
 .vscode/
 .idea/

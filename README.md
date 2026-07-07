@@ -21,7 +21,7 @@ graph TD
 ```
 
 ### 1. Distributed Ingestion Layer (Apache Spark)
-* **Script**: [ingest_spark.py](file:///path/to//src/ingest_spark.py)
+* **Script**: `src/ingest_spark.py`
 * **Processing Model**:
   - The Spark Master (Driver) fetches raw records from public job APIs (**Remotive**, **The Muse**, **Jobicy**) and **Coursera** courses.
   - The records are loaded into a Spark RDD (Resilient Distributed Dataset) and sliced into concurrent partitions.
@@ -29,7 +29,7 @@ graph TD
   - To bypass single-threaded database write bottlenecks, the workers use Spark's `foreachPartition` action. Each worker thread opens a concurrent, direct network connection to the Neo4j database to stream its partition of nodes and edges in parallel.
 
 ### 2. Semantic Property Graph Schema (Neo4j)
-* **Default Host**: `bolt://localhost:7687`
+* **Default Host**: Configured via `config.json` or environment variables
 * **Entity Schema**:
   * `(Job {id, title, company, location, category})` â€” Extracted job roles.
   * `(Skill {name})` â€” Normalized career skill prerequisites.
@@ -69,7 +69,7 @@ gddc2026/
 ├── static/
 │   └── index.html                  # Single-Page Frontend (Job Nexus dashboard)
 ├── requirements.txt                # Python project dependencies
-├── config.json                     # Database host connection configuration
+├── config.example.json             # Database connection template (copy to config.json)
 ├── .gitignore                      # Git rule exclusions
 └── README.md                       # Structured documentation guide
 ```
@@ -98,26 +98,14 @@ python -m spacy download en_core_web_sm
 ```
 
 ### 2. Configure Database Connections (Secure Practices)
-To prevent committing passwords to GitHub, edit [config.json](config.json) using placeholders:
-```json
-{
-  "neo4j_uri": "bolt://localhost:7687",
-  "neo4j_user": "neo4j",
-  "neo4j_pass": "YOUR_PASSWORD_HERE"
-}
+Copy `config.example.json` to `config.json` and fill in your Neo4j connection details:
+```bash
+cp config.example.json config.json
 ```
 
-#### Safe Authentication (Environment Variables)
-Instead of keeping the password in `config.json`, the application is designed to load your credentials from environment variables. Set them in your terminal session before starting the application:
-
-* **On Windows PowerShell:**
-  ```powershell
-  $env:NEO4J_PASS="YOUR_PASSWORD_HERE"
-  ```
-* **On Linux / macOS:**
-  ```bash
-  export NEO4J_PASS="YOUR_PASSWORD_HERE"
-  ```
+Credentials can also be set via environment variables (override config.json):
+* **Windows PowerShell:** `$env:NEO4J_PASS="your_password"`
+* **Linux / macOS:** `export NEO4J_PASS="your_password"`
 
 
 ### 3. Run Ingestion Pipeline
@@ -141,24 +129,24 @@ Open your web browser and go to **`http://localhost:8000`** to interact with the
 Follow these steps to deploy and run the ingestion pipeline across a physical distributed master-worker cluster:
 
 ### Step 1: Initialize the Master Node
-Run this command on the Spark master coordinator machine (`localhost`) to start the resource manager:
+Run this command on the Spark master coordinator machine to start the resource manager:
 ```bash
 # Linux / macOS
-./sbin/start-master.sh --host localhost --port 7077
+./sbin/start-master.sh --host <master-ip> --port 7077
 
 # Windows Command Prompt / PowerShell
-spark-class org.apache.spark.deploy.master.Master --host localhost --port 7077
+spark-class org.apache.spark.deploy.master.Master --host <master-ip> --port 7077
 ```
 
 ### Step 2: Register Worker Nodes
-Run this command on each worker executor machine (e.g. `localhost`) to register processing cores and memory with the master:
+Run this command on each worker executor machine to register processing cores and memory with the master:
 ```bash
 # Linux / macOS
-./sbin/start-worker.sh spark://localhost:7077
+./sbin/start-worker.sh spark://<master-ip>:7077
 
 # Windows Command Prompt / PowerShell
-spark-class org.apache.spark.deploy.worker.Worker spark://localhost:7077
+spark-class org.apache.spark.deploy.worker.Worker spark://<master-ip>:7077
 ```
 
 ### Step 3: Monitor Cluster Health
-Open **`http://localhost:8080`** in your browser. This will load the official Spark Master Web UI where you can track registered worker node addresses, core counts, memory usage, and active tasks.
+Open **`http://<master-ip>:8080`** in your browser. This will load the official Spark Master Web UI where you can track registered worker node addresses, core counts, memory usage, and active tasks.
