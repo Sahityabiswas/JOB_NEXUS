@@ -211,7 +211,7 @@
         <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
-        <div class="status-text" id="status-text">Connecting to your dashboard...</div>
+        <div class="status-text" id="status-text">Waking up... 0%</div>
 
         <a class="launch-btn" id="launch-btn" href="https://job-nexus-rt9c.onrender.com" target="_blank">Launch Dashboard</a>
 
@@ -237,43 +237,40 @@
             else STATUS.className = 'status-text';
         }
 
-        function done(text) {
-            setProgress(100, text || 'Your dashboard is ready!', 'warm');
+        function done() {
+            setProgress(100, '100% — Ready!', 'warm');
             SPINNER.style.display = 'none';
             BTN.style.display = 'inline-block';
             PROGRESS.style.width = '100%';
         }
 
         function launch() {
-            done('Dashboard is live!');
+            done();
         }
 
         function check() {
             attempts++;
             const p = Math.min(10 + Math.floor(attempts / 40 * 80), 90);
-            setProgress(p, 'Connecting to your dashboard...');
 
             fetch(TARGET + '/api/skills/all', { mode: 'cors', cache: 'no-store' })
                 .then(r => {
                     if (r.ok) {
                         launch();
                     } else if (attempts < MAX_ATTEMPTS) {
+                        setProgress(p, `Waking up... ${p}%`);
                         setTimeout(check, 2000);
                     } else {
-                        setProgress(95, 'Taking longer than usual — try launching manually', 'error');
+                        setProgress(95, '95% — Taking longer than usual', 'error');
                         SPINNER.style.display = 'none';
                         BTN.style.display = 'inline-block';
                     }
                 })
                 .catch(() => {
                     if (attempts < MAX_ATTEMPTS) {
-                        const msg = attempts < 5
-                            ? 'Waking up your server...'
-                            : 'Server is still waking up, please wait...';
-                        setProgress(p, msg);
+                        setProgress(p, `Waking up... ${p}%`);
                         setTimeout(check, 2000);
                     } else {
-                        setProgress(95, 'Taking longer than usual — try launching manually', 'error');
+                        setProgress(95, '95% — Taking longer than usual', 'error');
                         SPINNER.style.display = 'none';
                         BTN.style.display = 'inline-block';
                     }
