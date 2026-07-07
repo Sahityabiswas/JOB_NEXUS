@@ -1,0 +1,23 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local SQLite databases (auto-generated during ingestion)
+data/*.db
+
+# Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.Rhistory

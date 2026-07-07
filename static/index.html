@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOB NEXUS - Smart Career Recommendations</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
+        
+        :root {
+            --bg-deep: #03030b;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* 3D Glowing background spheres */
+        .blob-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: var(--bg-deep);
+        }
+        
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(10px);
+            opacity: 0.75;
+            pointer-events: none;
+            will-change: transform;
+            transform: translate3d(0,0,0);
+        }
+
+        /* Ambient Orbs */
+        .b1 {
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle at 35% 35%, #ec4899 0%, #a21caf 40%, #2e1065 70%, #000 100%);
+            top: -5%;
+            left: -5%;
+            animation: float1 22s infinite ease-in-out alternate;
+        }
+        .b2 {
+            width: 420px;
+            height: 420px;
+            background: radial-gradient(circle at 35% 35%, #22d3ee 0%, #0284c7 45%, #0c4a6e 75%, #000 100%);
+            bottom: -10%;
+            right: -5%;
+            animation: float2 28s infinite ease-in-out alternate;
+        }
+        .b3 {
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle at 35% 35%, #a855f7 0%, #6366f1 45%, #1e1b4b 75%, #000 100%);
+            top: 35%;
+            left: 70%;
+            animation: float3 25s infinite ease-in-out alternate;
+        }
+        .b4 {
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle at 35% 35%, #ff007f 0%, #be185d 40%, #500724 75%, #000 100%);
+            bottom: 25%;
+            left: -8%;
+            animation: float4 20s infinite ease-in-out alternate;
+        }
+        .b5 {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at 35% 35%, #06b6d4 0%, #0891b2 50%, #0e7490 75%, #000 100%);
+            top: 15%;
+            left: 45%;
+            animation: float5 24s infinite ease-in-out alternate;
+        }
+
+        @keyframes float1 {
+            0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+            50% { transform: translate3d(60px, -40px, 0) scale(1.08) rotate(180deg); }
+            100% { transform: translate3d(0, 0, 0) scale(1) rotate(360deg); }
+        }
+        @keyframes float2 {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(-80px, -60px, 0) scale(1.1); }
+            100% { transform: translate3d(0, 0, 0) scale(1); }
+        }
+        @keyframes float3 {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(-50px, 70px, 0) scale(0.9); }
+            100% { transform: translate3d(0, 0, 0) scale(1); }
+        }
+        @keyframes float4 {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(40px, 50px, 0) scale(1.08); }
+            100% { transform: translate3d(0, 0, 0) scale(1); }
+        }
+        @keyframes float5 {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(-30px, -40px, 0) scale(0.95); }
+            100% { transform: translate3d(0, 0, 0) scale(1); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glassmorphism utility */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 50px rgba(139, 92, 246, 0.15);
+        }
+
+        /* Branding Gradient */
+        .gradient-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-purple) 60%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        /* Landing Card styling */
+        .landing-card {
+            padding: 50px;
+            max-width: 650px;
+            margin: 8% auto 0;
+            text-align: left;
+        }
+
+        .landing-card h1 {
+            font-size: 3.5rem;
+            margin-bottom: 8px;
+            line-height: 1.1;
+        }
+
+        .landing-subtitle {
+            color: var(--text-dim);
+            font-size: 1.05rem;
+            margin-bottom: 35px;
+            font-weight: 400;
+        }
+
+        /* Input styling */
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid var(--glass-border);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-purple);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid var(--glass-border);
+            font-family: inherit;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-purple);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+        }
+
+        /* Tag Input Autocomplete */
+        .tag-input-wrapper {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            font-family: inherit;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            cursor: text;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tag-input-wrapper:focus-within {
+            border-color: var(--accent-purple);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+        }
+
+        .tag-skill-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 99px;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #c4b5fd;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            animation: chipIn 0.2s ease;
+        }
+
+        @keyframes chipIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .tag-skill-chip .chip-remove {
+            cursor: pointer;
+            font-size: 0.9rem;
+            line-height: 1;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .tag-skill-chip .chip-remove:hover {
+            opacity: 1;
+        }
+
+        .tag-text-input {
+            flex: 1;
+            min-width: 120px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            padding: 4px 0;
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 20, 0.96);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            margin-top: 4px;
+            max-height: 240px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        .autocomplete-dropdown.active {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover,
+        .autocomplete-item.selected {
+            background: rgba(139, 92, 246, 0.15);
+            color: white;
+        }
+
+        .autocomplete-item .match-highlight {
+            color: var(--accent-purple);
+            font-weight: 700;
+        }
+
+        .autocomplete-item .canonical-hint {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            opacity: 0.6;
+            margin-left: 8px;
+        }
+
+        /* Chips */
+        .chip-container {
+            margin-top: 12px;
+            margin-bottom: 25px;
+        }
+
+        .chip {
+            padding: 8px 16px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin: 4px;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .chip:hover {
+            background: rgba(139, 92, 246, 0.2);
+            color: #fff;
+            border-color: var(--accent-purple);
+        }
+
+        /* Buttons */
+        .btn-action {
+            width: 100%;
+            padding: 16px 30px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-action:active {
+            transform: translateY(0);
+        }
+
+        /* Dashboard elements */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.8rem;
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: white;
+        }
+
+        /* Profile card */
+        .profile-card {
+            padding: 30px;
+            margin-bottom: 40px;
+            border-left: 5px solid var(--accent-purple);
+        }
+
+        .profile-id {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        /* Tag system */
+        .tag {
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .tag-skill {
+            background: rgba(139, 92, 246, 0.12);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+        }
+
+        .tag-gap {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tag-gap:hover {
+            background: var(--accent-red);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .tag-course {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 12px;
+            padding: 16px;
+            border-radius: 14px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .tag-course:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Opportunity Grid */
+        .opportunities-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .job-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .job-card {
+            padding: 30px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .job-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 4px;
+        }
+
+        .job-meta {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .match-badge {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: white;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(6, 182, 212, 0.2);
+        }
+
+        /* Matching progress bar */
+        .progress-wrapper {
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 99px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+            transition: width 1s ease-out;
+        }
+
+        /* Network Visualizer Graph */
+        .graph-section {
+            margin-bottom: 40px;
+        }
+
+        #graph-container {
+            height: 600px;
+            width: 100%;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            background: rgba(3, 3, 11, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Drawer details */
+        #drawer {
+            position: fixed;
+            top: 0;
+            right: -480px;
+            width: 480px;
+            height: 100%;
+            background: rgba(5, 5, 10, 0.94);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-left: 1px solid var(--glass-border);
+            z-index: 1000;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #drawer.open {
+            right: 0;
+            box-shadow: -20px 0 60px rgba(0,0,0,0.8);
+        }
+
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .drawer-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .btn-close {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            transition: all 0.2s;
+        }
+
+        .btn-close:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: rotate(90deg);
+        }
+
+        .drawer-section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-top: 30px;
+            margin-bottom: 12px;
+        }
+
+        /* Loading spinner */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 3, 11, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(139, 92, 246, 0.1);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+    <div class="blob-bg">
+        <div class="bubble b1"></div>
+        <div class="bubble b2"></div>
+        <div class="bubble b3"></div>
+        <div class="bubble b4"></div>
+        <div class="bubble b5"></div>
+    </div>
+    
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+    <div id="drawer">
+        <div>
+            <button class="btn-close" onclick="closeDrawer()">✕</button>
+            <div id="drawer-content"></div>
+        </div>
+        <div id="drawer-footer" style="margin-top: 30px;"></div>
+    </div>
+
+    <div class="container">
+        <!-- Landing Page (JOB NEXUS) -->
+        <div id="landing-view" class="glass landing-card">
+            <h1 class="gradient-title">JOB NEXUS</h1>
+            <p class="landing-subtitle">Intelligent skill-matching for modern professionals.</p>
+            
+            <div class="input-group">
+                <label for="nameInput" class="input-label">Your Name</label>
+                <input type="text" id="nameInput" placeholder="Enter your name" required>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Your Skills</label>
+                <div class="tag-input-wrapper" id="tagInputWrapper">
+                    <div class="tag-chip-container" id="tagChips"></div>
+                    <input type="text" class="tag-text-input" id="skillAutocomplete" placeholder="Type a skill...">
+                    <div class="autocomplete-dropdown" id="autocompleteDropdown"></div>
+                </div>
+            </div>
+            
+            <div>
+                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Popular Skills (click to add):</p>
+                <div id="skills-chips" class="chip-container"></div>
+            </div>
+            
+            <button class="btn-action" onclick="runSearch()">Enter Dashboard →</button>
+        </div>
+
+        <!-- Dashboard Page (VISION NEXUS) -->
+        <div id="dashboard-view" style="display:none;">
+            <div class="dashboard-header">
+                <h1 class="gradient-title" style="font-size:3rem;">VISION NEXUS</h1>
+                <button class="btn-back" onclick="goBack()">← Edit Profile</button>
+            </div>
+            
+            <!-- User Profile card -->
+            <div class="glass profile-card">
+                <div class="profile-id" id="user-profile-id">ID: VN-001</div>
+                <div class="profile-name" id="user-profile-name">User Profile</div>
+                <div id="user-skills-container"></div>
+            </div>
+            
+            <!-- Job Opportunities grid -->
+            <div class="opportunities-section">
+                <h2 class="section-title">Top Matched Opportunities</h2>
+                <div id="job-cards-container" class="job-grid"></div>
+            </div>
+            
+            <!-- Vis.js Graph Network Map -->
+            <div class="graph-section">
+                <h2 class="section-title" style="margin-bottom:15px;">Career Graph Network Map</h2>
+                <div id="graph-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentName = "";
+        let currentSkillsArray = [];
+        let network = null;
+        let autocompleteDebounce = null;
+
+        // Populate popular chips
+        const popularSkills = ["Excel", "Python", "SQL", "Git", "Docker", "Kubernetes", "Machine Learning", "TensorFlow", "Deep Learning", "Java", "JavaScript", "React", "AWS", "Tableau", "Power BI"];
+        document.getElementById("skills-chips").innerHTML = popularSkills.map(s => `
+            <div class="chip" onclick="addSkill('${s}')">${s}</div>
+        `).join('');
+
+        // --- Tag Input Autocomplete ---
+
+        function getSkillInput() {
+            return document.getElementById('skillAutocomplete');
+        }
+
+        function renderSkillChips() {
+            const container = document.getElementById('tagChips');
+            container.innerHTML = currentSkillsArray.map((s, i) => `
+                <span class="tag-skill-chip">
+                    ${s}
+                    <span class="chip-remove" onclick="event.stopPropagation(); removeSkill(${i})">✕</span>
+                </span>
+            `).join('');
+        }
+
+        function removeSkill(index) {
+            currentSkillsArray.splice(index, 1);
+            renderSkillChips();
+            getSkillInput().focus();
+        }
+
+        function addSkill(s) {
+            if (!s || !s.trim()) return;
+            const norm = s.trim();
+            if (!currentSkillsArray.map(x => x.toLowerCase()).includes(norm.toLowerCase())) {
+                currentSkillsArray.push(norm);
+                renderSkillChips();
+            }
+            getSkillInput().value = '';
+            hideDropdown();
+            getSkillInput().focus();
+        }
+
+        function hideDropdown() {
+            document.getElementById('autocompleteDropdown').classList.remove('active');
+        }
+
+        function showDropdown() {
+            document.getElementById('autocompleteDropdown').classList.add('active');
+        }
+
+        async function fetchAutocompleteSuggestions(q) {
+            const dropdown = document.getElementById('autocompleteDropdown');
+            if (!q.trim()) {
+                dropdown.innerHTML = '';
+                hideDropdown();
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/api/skills/search?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                const skills = data.skills || [];
+                if (skills.length === 0) {
+                    dropdown.innerHTML = '<div class="autocomplete-item" style="color:var(--text-dim);">No matching skills found</div>';
+                    showDropdown();
+                    return;
+                }
+                dropdown.innerHTML = skills.map(skill => {
+                    const lower = skill.toLowerCase();
+                    const idx = lower.indexOf(q.toLowerCase());
+                    let label = skill;
+                    if (idx !== -1) {
+                        label = skill.slice(0, idx) + '<span class="match-highlight">' + skill.slice(idx, idx + q.length) + '</span>' + skill.slice(idx + q.length);
+                    }
+                    return `<div class="autocomplete-item" onclick="addSkill('${skill.replace(/'/g, "\\'")}')">${label} <span class="canonical-hint">skill</span></div>`;
+                }).join('');
+                showDropdown();
+            } catch (e) {
+                console.error("Autocomplete error:", e);
+            }
+        }
+
+        function onAutocompleteInput() {
+            clearTimeout(autocompleteDebounce);
+            const val = getSkillInput().value;
+            autocompleteDebounce = setTimeout(() => fetchAutocompleteSuggestions(val), 150);
+        }
+
+        function onAutocompleteKeydown(e) {
+            const dropdown = document.getElementById('autocompleteDropdown');
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+            let selectedIdx = -1;
+            items.forEach((item, i) => {
+                if (item.classList.contains('selected')) selectedIdx = i;
+            });
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIdx >= 0 && items[selectedIdx]) {
+                    const text = items[selectedIdx].textContent.replace('skill', '').trim();
+                    addSkill(text);
+                } else {
+                    const val = getSkillInput().value.trim();
+                    if (val) addSkill(val);
+                }
+            } else if (e.key === 'Backspace' && !getSkillInput().value && currentSkillsArray.length > 0) {
+                currentSkillsArray.pop();
+                renderSkillChips();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (items.length > 0) {
+                    items.forEach(item => item.classList.remove('selected'));
+                    const next = (selectedIdx + 1) % items.length;
+                    items[next].classList.add('selected');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (items.length > 0) {
+                    items.forEach(item => item.classList.remove('selected'));
+                    const prev = (selectedIdx - 1 + items.length) % items.length;
+                    items[prev].classList.add('selected');
+                }
+            } else if (e.key === 'Escape') {
+                hideDropdown();
+            }
+        }
+
+        function onAutocompleteBlur() {
+            setTimeout(hideDropdown, 200);
+        }
+
+        // Init autocomplete listeners (called on page load)
+        function initAutocomplete() {
+            const input = getSkillInput();
+            input.addEventListener('input', onAutocompleteInput);
+            input.addEventListener('keydown', onAutocompleteKeydown);
+            input.addEventListener('blur', onAutocompleteBlur);
+            document.getElementById('tagInputWrapper').addEventListener('click', () => input.focus());
+        }
+
+        // --- End Tag Input ---
+
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.remove('active');
+        }
+
+        function runSearch() {
+            const nameVal = document.getElementById("nameInput").value.trim();
+            if (!nameVal) {
+                alert("Please enter your name.");
+                return;
+            }
+            if (currentSkillsArray.length === 0) {
+                alert("Please add at least one skill.");
+                return;
+            }
+            currentName = nameVal;
+            loadDashboard();
+        }
+
+        function goBack() {
+            document.getElementById("dashboard-view").style.display = "none";
+            document.getElementById("landing-view").style.display = "block";
+        }
+
+        function getSkillsString() {
+            return currentSkillsArray.join(', ');
+        }
+
+        async function loadDashboard() {
+            showLoading();
+            
+            document.getElementById("landing-view").style.display = "none";
+            document.getElementById("dashboard-view").style.display = "block";
+
+            // 1. Update Profile Display
+            document.getElementById("user-profile-name").innerText = currentName;
+            
+            // Render user skills chips in profile card
+            document.getElementById("user-skills-container").innerHTML = currentSkillsArray.map(s => `
+                <span class="tag tag-skill">${s}</span>
+            `).join('');
+
+            const skillsStr = getSkillsString();
+
+            // 2. Fetch Job Recommendations (default to ML mode always)
+            try {
+                const response = await fetch(`${API_BASE}/api/recommend?skills=${encodeURIComponent(skillsStr)}&mode=ml`);
+                const data = await response.json();
+                
+                window.jobsData = {};
+                if (data.recommendations) {
+                    data.recommendations.forEach(j => {
+                        window.jobsData[j.job_id] = j;
+                    });
+                }
+                
+                renderJobCards(data.recommendations);
+            } catch (e) {
+                console.error("Error loading recommendations:", e);
+                document.getElementById("job-cards-container").innerHTML = "<p style='color:var(--text-dim)'>Failed to load recommendations. Make sure FastAPI server is running.</p>";
+            }
+
+            // 3. Render Vis.js Graph
+            await renderGraph();
+            
+            hideLoading();
+        }
+
+        function renderJobCards(jobs) {
+            const container = document.getElementById("job-cards-container");
+            if (!jobs || jobs.length === 0) {
+                container.innerHTML = "<p style='color:var(--text-dim)'>No jobs matched. Try adding different skills.</p>";
+                return;
+            }
+
+            container.innerHTML = jobs.map(j => {
+                const scorePct = Math.round(j.score * 100);
+                let gapsHtml = j.missing.slice(0, 3).map(g => `<span class="tag tag-gap" onclick="event.stopPropagation(); simulateSkill('${g.replace(/'/g, "\\'")}')">${g}</span>`).join('');
+                if (!gapsHtml) {
+                    gapsHtml = '<span class="tag" style="background:rgba(16,185,129,0.1); color:#34d399; border: 1px solid rgba(16,185,129,0.2);">✓ Skills Matched</span>';
+                }
+
+                return `
+                    <div class="glass job-card" onclick="openDrawer('${j.job_id}')">
+                        <div>
+                            <div class="job-header">
+                                <div>
+                                    <h3 class="job-title">${j.title}</h3>
+                                    <div class="job-meta">${j.company} • ${j.location}</div>
+                                </div>
+                                <div class="match-badge">${scorePct}% Match</div>
+                            </div>
+                            
+                            <div class="progress-wrapper">
+                                <div class="progress-container">
+                                    <div class="progress-fill" style="width: ${scorePct}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <div style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 8px; font-weight:700;">Gap Analysis</div>
+                            <div style="display: flex; flex-wrap: wrap;">${gapsHtml}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function renderGraph() {
+            const container = document.getElementById("graph-container");
+            try {
+                const response = await fetch(`${API_BASE}/api/graph?skills=${encodeURIComponent(getSkillsString())}&mode=ml`);
+                const graphData = await response.json();
+
+                // Style the network graph nodes for a clean glow dark theme
+                const styledNodes = graphData.nodes.map(n => {
+                    let color = { background: '#1e293b', border: '#475569' };
+                    let font = { color: '#ffffff', face: 'DM Sans', size: 12 };
+                    let borderW = 1;
+                    
+                    if (n.group === 'user') {
+                        // Color user node yellow gradient
+                        color = { background: '#f59e0b', border: '#d97706', hover: { background: '#fbbf24', border: '#f59e0b' } };
+                        borderW = 3;
+                    } else if (n.group === 'user_skill') {
+                        // Color active user skills purple
+                        color = { background: '#8b5cf6', border: '#7c3aed', hover: { background: '#a78bfa', border: '#8b5cf6' } };
+                    } else if (n.group === 'missing_skill') {
+                        // Color gap skills red/coral
+                        color = { background: '#ef4444', border: '#dc2626', hover: { background: '#f87171', border: '#ef4444' } };
+                    } else if (n.group === 'job') {
+                        // Color jobs cyan
+                        color = { background: '#06b6d4', border: '#0891b2', hover: { background: '#22d3ee', border: '#06b6d4' } };
+                        borderW = 2;
+                    } else if (n.group === 'course') {
+                        // Color course nodes green
+                        color = { background: '#10b981', border: '#059669', hover: { background: '#34d399', border: '#10b981' } };
+                    }
+                    
+                    // Rewrite node labels with custom text properties
+                    return {
+                        ...n,
+                        color,
+                        font,
+                        borderWidth: borderW,
+                        shadow: { enabled: true, color: 'rgba(0,0,0,0.5)', size: 4 }
+                    };
+                });
+
+                const styledEdges = graphData.edges.map(e => {
+                    let edgeColor = 'rgba(255, 255, 255, 0.15)';
+                    if (e.label === 'matches') {
+                        edgeColor = 'rgba(6, 182, 212, 0.45)';
+                    } else if (e.label === 'requires') {
+                        edgeColor = 'rgba(239, 68, 68, 0.35)';
+                    } else if (e.label === 'teaches') {
+                        edgeColor = 'rgba(16, 185, 129, 0.4)';
+                    }
+                    
+                    return {
+                        ...e,
+                        color: { color: edgeColor, highlight: '#a78bfa', hover: '#a78bfa' },
+                        font: { color: 'rgba(255,255,255,0.4)', size: 9, face: 'DM Sans' },
+                        hoverWidth: 1.5
+                    };
+                });
+
+                const options = {
+                    interaction: { hover: true, tooltipDelay: 200 },
+                    nodes: {
+                        shape: 'dot',
+                        scaling: { min: 12, max: 28 }
+                    },
+                    edges: {
+                        width: 1.5,
+                        arrows: { to: { enabled: true, scaleFactor: 0.4 } }
+                    },
+                    physics: {
+                        barnesHut: {
+                            gravitationalConstant: -2800,
+                            centralGravity: 0.28,
+                            springLength: 100,
+                            springConstant: 0.04
+                        },
+                        stabilization: { iterations: 120 }
+                    }
+                };
+
+                const data = { nodes: new vis.DataSet(styledNodes), edges: new vis.DataSet(styledEdges) };
+                network = new vis.Network(container, data, options);
+            } catch (e) {
+                console.error("Error loading graph visualizer:", e);
+                container.innerHTML = "<p style='color:var(--text-dim); padding:40px;'>Failed to render network. Check server status.</p>";
+            }
+        }
+
+        function openDrawer(jobId) {
+            const jobData = (window.jobsData && window.jobsData[jobId]) ? window.jobsData[jobId] : null;
+            if (!jobData) return;
+            
+            const content = document.getElementById('drawer-content');
+            const footer = document.getElementById('drawer-footer');
+            
+            let coursesHtml = '';
+            if (jobData.courses && jobData.courses.length > 0) {
+                coursesHtml = jobData.courses.map(c => `
+                    <div class="tag-course" onclick="alert('Enrolling in Course: ' + this.dataset.courseName)" data-course-name="${c.course_name.replace(/"/g, '&quot;')}">
+                        <div style="font-weight: 700; color: var(--accent-green); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                            📚 ${c.course_name}
+                        </div>
+                        <div style="font-size: 0.78rem; color: var(--text-dim);">
+                            Teaches: <span style="color: #fff;">${c.skills_covered.join(', ')}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                coursesHtml = '<p style="color:var(--text-dim); font-size:0.85rem;">You match all skills for this role! No courses required.</p>';
+            }
+            
+            let gapsHtml = '';
+            if (jobData.gaps && jobData.gaps.length > 0) {
+                gapsHtml = jobData.gaps.map(g => `<span class="tag tag-gap" onclick="simulateSkill(this.dataset.skill)" data-skill="${g.replace(/"/g, '&quot;')}">➕ ${g}</span>`).join('');
+            } else if (jobData.missing && jobData.missing.length > 0) {
+                gapsHtml = jobData.missing.map(g => `<span class="tag tag-gap" onclick="simulateSkill(this.dataset.skill)" data-skill="${g.replace(/"/g, '&quot;')}">➕ ${g}</span>`).join('');
+            } else {
+                gapsHtml = '<p style="color:var(--accent-green); font-size:0.85rem; font-weight:700;">✓ Ready to apply</p>';
+            }
+
+            content.innerHTML = `
+                <h2 style="font-family:'Syne'; font-size:2rem; font-weight:800; line-height: 1.2; margin-bottom:6px;">${jobData.title}</h2>
+                <p style="color:var(--text-dim); font-size: 0.95rem;">${jobData.company} • ${jobData.location}</p>
+                
+                <div class="drawer-section-label">Skill Gap Analysis</div>
+                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">(Click any skill to simulate learning it)</p>
+                <div style="display:flex; flex-wrap:wrap; margin-bottom:15px;">${gapsHtml}</div>
+                
+                <div class="drawer-section-label">Prescribed Online Courses</div>
+                <div style="margin-bottom:10px;">${coursesHtml}</div>
+            `;
+            
+            footer.innerHTML = `
+                <button class="btn-action" style="width: 100%" onclick="alert('Successfully applied to ${jobData.title.replace(/'/g, "\\'")}!')">Direct Apply ↗</button>
+            `;
+
+            document.getElementById('drawer').classList.add('open');
+            document.getElementById('drawer-overlay').classList.add('open');
+        }
+
+        function closeDrawer() {
+            document.getElementById('drawer').classList.remove('open');
+            document.getElementById('drawer-overlay').classList.remove('open');
+        }
+
+        function simulateSkill(skillName) {
+            if (!skillName) return;
+            
+            closeDrawer();
+            
+            if (!currentSkillsArray.map(x => x.toLowerCase()).includes(skillName.toLowerCase())) {
+                currentSkillsArray.push(skillName);
+            }
+            
+            renderSkillChips();
+            loadDashboard();
+        }
+
+        // Auto-run if query parameters are present
+        window.addEventListener('load', () => {
+            initAutocomplete();
+            const params = new URLSearchParams(window.location.search);
+            const nameParam = params.get('name') || '';
+            const skillsParam = params.get('skills') || '';
+            if (skillsParam) {
+                const finalName = nameParam || 'Guest';
+                document.getElementById('nameInput').value = finalName;
+                skillsParam.split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
+                    if (!currentSkillsArray.map(x => x.toLowerCase()).includes(s.toLowerCase())) {
+                        currentSkillsArray.push(s);
+                    }
+                });
+                renderSkillChips();
+                currentName = finalName;
+                loadDashboard();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+requests
+neo4j
+fastapi
+uvicorn[standard]
+pyspark
+pandas
+scikit-learn
+spacy
