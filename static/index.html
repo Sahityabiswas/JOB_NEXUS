@@ -922,6 +922,24 @@
             animation: spin 1s infinite linear;
         }
 
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .loading-subtitle {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-subtitle.visible {
+            opacity: 1;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -981,7 +999,11 @@
     </div>
     
     <div id="loading-overlay" class="loading-overlay">
-        <div class="spinner"></div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+            <div class="spinner"></div>
+            <div class="loading-text">Analyzing your skills...</div>
+            <div class="loading-subtitle" id="loading-subtitle">Server is waking up, please wait...</div>
+        </div>
     </div>
 
     <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
@@ -1268,12 +1290,21 @@
 
         // --- End Tag Input ---
 
+        let wakeupTimer = null;
+
         function showLoading() {
             document.getElementById('loading-overlay').classList.add('active');
+            document.getElementById('loading-subtitle').classList.remove('visible');
+            if (wakeupTimer) clearTimeout(wakeupTimer);
+            wakeupTimer = setTimeout(() => {
+                document.getElementById('loading-subtitle').classList.add('visible');
+            }, 3000);
         }
 
         function hideLoading() {
             document.getElementById('loading-overlay').classList.remove('active');
+            document.getElementById('loading-subtitle').classList.remove('visible');
+            if (wakeupTimer) { clearTimeout(wakeupTimer); wakeupTimer = null; }
         }
 
         function runSearch() {
@@ -1449,7 +1480,7 @@
                 document.getElementById('filterCount').textContent = data.recommendations.length + ' results';
             } catch (e) {
                 console.error("Error loading recommendations:", e);
-                document.getElementById("job-cards-container").innerHTML = "<p style='color:var(--text-dim)'>Failed to load recommendations. Make sure FastAPI server is running.</p>";
+                document.getElementById("job-cards-container").innerHTML = "<p style='color:var(--text-dim)'>Failed to load recommendations. If this is the first load, the server may still be waking up — try again in a moment.</p>";
             }
         }
 
