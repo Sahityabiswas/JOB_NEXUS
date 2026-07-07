@@ -123,6 +123,22 @@ def search_skills(q: str = Query("")):
     sorted_results = sorted(results, key=lambda x: (x.lower().startswith(q), x))[:10]
     return JSONResponse({"skills": sorted_results})
 
+@app.get("/api/skills/normalize")
+def normalize_skill(q: str = Query("")):
+    from normalize import normalize_user_skill
+    q = q.strip()
+    if not q:
+        return JSONResponse({"original": q, "canonical": q, "normalized": False})
+    canonical = normalize_user_skill(q)
+    if not canonical:
+        canonical = q.strip().title()
+    is_normalized = canonical.lower() != q.lower()
+    return JSONResponse({
+        "original": q,
+        "canonical": canonical,
+        "normalized": is_normalized
+    })
+
 @app.get("/api/skills/all")
 def get_all_skills():
     from normalize import CANONICAL_SKILLS

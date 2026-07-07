@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JOB NEXUS - Smart Career Recommendations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
         
@@ -514,6 +515,24 @@
             color: var(--accent-cyan);
         }
 
+        .btn-pdf {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+            margin-right: 16px;
+        }
+
+        .btn-pdf:hover {
+            color: var(--accent-green);
+        }
+
         /* Toast notification */
         .toast {
             position: fixed;
@@ -928,7 +947,8 @@
             <div class="dashboard-header">
                 <h1 class="gradient-title" style="font-size:3rem;">VISION NEXUS</h1>
                 <div style="display:flex;align-items:center;">
-                    <button class="btn-share" onclick="shareProfile()">↗ Share</button>
+                    <button class="btn-share" onclick="shareProfile()">↗ Share Link</button>
+                    <button class="btn-pdf" onclick="downloadPDF()">📄 PDF Report</button>
                     <button class="btn-back" onclick="goBack()">← Edit Profile</button>
                 </div>
             </div>
@@ -975,10 +995,14 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- Hidden PDF report container -->
+    <div id="pdf-report" style="display:none;"></div>
+
     <script>
         const API_BASE = window.location.origin;
         let currentName = "";
         let currentSkillsArray = [];
+        let skillOriginMap = {};
         let network = null;
         let autocompleteDebounce = null;
         let filterState = { category: '', location: '', company: '', sort: 'score_desc' };
@@ -997,12 +1021,16 @@
 
         function renderSkillChips() {
             const container = document.getElementById('tagChips');
-            container.innerHTML = currentSkillsArray.map((s, i) => `
-                <span class="tag-skill-chip">
-                    ${s}
+            container.innerHTML = currentSkillsArray.map((s, i) => {
+                const lower = s.toLowerCase();
+                const orig = skillOriginMap[lower];
+                const title = orig ? `Recognized as: ${s}` : '';
+                const display = orig ? `${s} (${orig})` : s;
+                return `<span class="tag-skill-chip" title="${title}">
+                    ${display}
                     <span class="chip-remove" onclick="event.stopPropagation(); removeSkill(${i})">✕</span>
-                </span>
-            `).join('');
+                </span>`;
+            }).join('');
         }
 
         function removeSkill(index) {
@@ -1011,16 +1039,30 @@
             getSkillInput().focus();
         }
 
-        function addSkill(s) {
+        function addSkill(s, original) {
             if (!s || !s.trim()) return;
             const norm = s.trim();
             if (!currentSkillsArray.map(x => x.toLowerCase()).includes(norm.toLowerCase())) {
                 currentSkillsArray.push(norm);
+                if (original && original.toLowerCase() !== norm.toLowerCase()) {
+                    skillOriginMap[norm.toLowerCase()] = original;
+                }
                 renderSkillChips();
             }
             getSkillInput().value = '';
             hideDropdown();
             getSkillInput().focus();
+        }
+
+        async function normalizeSkill(raw) {
+            if (!raw || !raw.trim()) return null;
+            try {
+                const res = await fetch(`${API_BASE}/api/skills/normalize?q=${encodeURIComponent(raw.trim())}`);
+                const data = await res.json();
+                return data;
+            } catch (e) {
+                return { original: raw.trim(), canonical: raw.trim(), normalized: false };
+            }
         }
 
         function hideDropdown() {
@@ -1083,7 +1125,11 @@
                     addSkill(text);
                 } else {
                     const val = getSkillInput().value.trim();
-                    if (val) addSkill(val);
+                    if (val) {
+                        normalizeSkill(val).then(data => {
+                            addSkill(data.canonical, data.original);
+                        });
+                    }
                 }
             } else if (e.key === 'Backspace' && !getSkillInput().value && currentSkillsArray.length > 0) {
                 currentSkillsArray.pop();
@@ -1157,6 +1203,83 @@
                 showToast('Profile link copied!');
             }).catch(() => {
                 showToast('Copy failed. URL: ' + url);
+            });
+        }
+
+        function downloadPDF() {
+            const jobs = window.jobsData ? Object.values(window.jobsData) : [];
+            if (jobs.length === 0) {
+                showToast('No recommendations loaded yet.');
+                return;
+            }
+
+            const reportDiv = document.getElementById('pdf-report');
+
+            const headerStyle = 'font-family: "Syne", sans-serif; font-weight: 800;';
+            const sectionStyle = 'font-family: "DM Sans", sans-serif;';
+
+            let jobRows = jobs.map(j => {
+                const scorePct = Math.round(j.score * 100);
+                const matched = j.score_breakdown?.matched_list || [];
+                const missing = j.score_breakdown?.missing_list || [];
+                const courses = j.courses || [];
+                return `
+                    <tr style="border-bottom: 1px solid #333;">
+                        <td style="padding: 10px 8px; color: #f8fafc;">${j.title}</td>
+                        <td style="padding: 10px 8px; color: #94a3b8;">${j.company}</td>
+                        <td style="padding: 10px 8px; color: #10b981; font-weight: 700; text-align: center;">${scorePct}%</td>
+                        <td style="padding: 10px 8px; color: #94a3b8; max-width: 200px;">${matched.length ? matched.join(', ') : '—'}</td>
+                        <td style="padding: 10px 8px; color: #ef4444; max-width: 200px;">${missing.length ? missing.join(', ') : '—'}</td>
+                        <td style="padding: 10px 8px; color: #94a3b8; max-width: 180px;">${courses.length ? courses.map(c => c.course_name).join('; ') : '—'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            reportDiv.innerHTML = `
+                <div id="pdf-content" style="background: #03030b; color: #f8fafc; padding: 40px; font-family: 'DM Sans', sans-serif;">
+                    <h1 style="${headerStyle} font-size: 32px; margin-bottom: 4px; background: linear-gradient(135deg,#06b6d4,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">VISION NEXUS</h1>
+                    <p style="color: #94a3b8; margin-bottom: 24px; ${sectionStyle}">Career Recommendation Report</p>
+
+                    <div style="margin-bottom: 24px;">
+                        <h2 style="${headerStyle} font-size: 18px; color: #f8fafc; margin-bottom: 8px;">Profile</h2>
+                        <p style="color: #f8fafc; ${sectionStyle}"><strong>Name:</strong> ${currentName}</p>
+                        <p style="color: #94a3b8; ${sectionStyle}"><strong>Skills:</strong> ${currentSkillsArray.join(', ')}</p>
+                    </div>
+
+                    <h2 style="${headerStyle} font-size: 18px; color: #f8fafc; margin-bottom: 12px;">Job Recommendations</h2>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #8b5cf6;">
+                                <th style="padding: 10px 8px; text-align: left; color: #8b5cf6;">Title</th>
+                                <th style="padding: 10px 8px; text-align: left; color: #8b5cf6;">Company</th>
+                                <th style="padding: 10px 8px; text-align: center; color: #8b5cf6;">Match</th>
+                                <th style="padding: 10px 8px; text-align: left; color: #8b5cf6;">Matched Skills</th>
+                                <th style="padding: 10px 8px; text-align: left; color: #8b5cf6;">Gap Skills</th>
+                                <th style="padding: 10px 8px; text-align: left; color: #8b5cf6;">Courses</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${jobRows}
+                        </tbody>
+                    </table>
+
+                    <p style="color: #94a3b8; margin-top: 32px; font-size: 10px; text-align: center; border-top: 1px solid #333; padding-top: 16px;">Generated by VISION NEXUS — Skill Intelligence Platform</p>
+                </div>
+            `;
+
+            const opt = {
+                margin: [10, 10],
+                filename: `${currentName.replace(/\s+/g, '_')}_career_report.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#03030b', useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(reportDiv.querySelector('#pdf-content')).save().then(() => {
+                reportDiv.innerHTML = '';
+            }).catch(() => {
+                showToast('PDF generation failed.');
+                reportDiv.innerHTML = '';
             });
         }
 
@@ -1469,14 +1592,21 @@
             if (skillsParam) {
                 const finalName = nameParam || 'Guest';
                 document.getElementById('nameInput').value = finalName;
-                skillsParam.split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
-                    if (!currentSkillsArray.map(x => x.toLowerCase()).includes(s.toLowerCase())) {
-                        currentSkillsArray.push(s);
-                    }
+                const rawSkills = skillsParam.split(',').map(s => s.trim()).filter(Boolean);
+                const promises = rawSkills.map(s => normalizeSkill(s).then(data => ({ canonical: data.canonical, original: data.original })));
+                Promise.all(promises).then(results => {
+                    results.forEach(r => {
+                        if (r.canonical && !currentSkillsArray.map(x => x.toLowerCase()).includes(r.canonical.toLowerCase())) {
+                            currentSkillsArray.push(r.canonical);
+                            if (r.original.toLowerCase() !== r.canonical.toLowerCase()) {
+                                skillOriginMap[r.canonical.toLowerCase()] = r.original;
+                            }
+                        }
+                    });
+                    renderSkillChips();
+                    currentName = finalName;
+                    loadDashboard();
                 });
-                renderSkillChips();
-                currentName = finalName;
-                loadDashboard();
             }
         });
     </script>
