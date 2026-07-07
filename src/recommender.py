@@ -56,6 +56,8 @@ def get_graph_recommendations(user_skills: list, limit: int = 6) -> list:
     scored = []
     for jid, jdata in jobs.items():
         job_skills = jdata["skills"]
+        if len(job_skills) < 2:
+            continue
         job_skills_lower = [s.lower() for s in job_skills]
         job_skill_set = set(job_skills_lower)
         
@@ -97,7 +99,13 @@ def get_graph_recommendations(user_skills: list, limit: int = 6) -> list:
             "matched": matched_skills,
             "missing": missing_skills,
             "courses": recommended_courses[:3],
-            "method": "graph"
+            "method": "graph",
+            "score_breakdown": {
+                "total_required": len(job_skills),
+                "user_matched": len(matched_skills),
+                "matched_list": matched_skills,
+                "missing_list": missing_skills
+            }
         })
         
     scored.sort(key=lambda x: x["score"], reverse=True)
@@ -142,6 +150,8 @@ def get_ml_recommendations(user_skills: list, limit: int = 6) -> list:
     for jid, score in ranked:
         jdata = jobs[jid]
         job_skills = jdata["skills"]
+        if len(job_skills) < 2:
+            continue
         job_skills_lower = [s.lower() for s in job_skills]
         job_skill_set = set(job_skills_lower)
         
@@ -178,7 +188,13 @@ def get_ml_recommendations(user_skills: list, limit: int = 6) -> list:
             "matched": matched_skills,
             "missing": missing_skills,
             "courses": recommended_courses[:3],
-            "method": "ml"
+            "method": "ml",
+            "score_breakdown": {
+                "total_required": len(job_skills),
+                "user_matched": len(matched_skills),
+                "matched_list": matched_skills,
+                "missing_list": missing_skills
+            }
         })
         
     positive_results = [r for r in results if r["score"] > 0]

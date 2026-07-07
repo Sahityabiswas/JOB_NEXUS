@@ -626,6 +626,58 @@
             color: white;
             white-space: nowrap;
             box-shadow: 0 4px 10px rgba(6, 182, 212, 0.2);
+            cursor: help;
+            position: relative;
+        }
+
+        .match-badge .breakdown-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: rgba(10, 10, 20, 0.96);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            min-width: 200px;
+            font-weight: 400;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            z-index: 50;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+
+        .match-badge:hover .breakdown-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .breakdown-tooltip .bd-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            gap: 20px;
+        }
+
+        .breakdown-tooltip .bd-label {
+            color: var(--text-dim);
+        }
+
+        .breakdown-tooltip .bd-value {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .breakdown-tooltip .bd-matched {
+            color: var(--accent-green);
+        }
+
+        .breakdown-tooltip .bd-missing {
+            color: var(--accent-red);
         }
 
         /* Matching progress bar */
@@ -1140,10 +1192,21 @@
 
             container.innerHTML = jobs.map(j => {
                 const scorePct = Math.round(j.score * 100);
-                let gapsHtml = j.missing.slice(0, 3).map(g => `<span class="tag tag-gap" onclick="event.stopPropagation(); simulateSkill('${g.replace(/'/g, "\\'")}')">${g}</span>`).join('');
+                let gapsHtml = j.missing.map(g => `<span class="tag tag-gap" onclick="event.stopPropagation(); simulateSkill('${g.replace(/'/g, "\\'")}')">${g}</span>`).join('');
                 if (!gapsHtml) {
                     gapsHtml = '<span class="tag" style="background:rgba(16,185,129,0.1); color:#34d399; border: 1px solid rgba(16,185,129,0.2);">✓ Skills Matched</span>';
                 }
+
+                const bd = j.score_breakdown || {};
+                const breakdownHtml = bd.total_required ? `
+                    <div class="breakdown-tooltip">
+                        <div class="bd-row"><span class="bd-label">Required</span><span class="bd-value">${bd.total_required} skills</span></div>
+                        <div class="bd-row"><span class="bd-label">You have</span><span class="bd-value bd-matched">${bd.user_matched} skills</span></div>
+                        <div class="bd-row"><span class="bd-label">Missing</span><span class="bd-value bd-missing">${bd.missing_list ? bd.missing_list.length : 0} skills</span></div>
+                        ${bd.matched_list && bd.matched_list.length ? `<div class="bd-row" style="border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;margin-top:4px;"><span class="bd-label">Matched</span><span class="bd-value bd-matched" style="text-align:right;max-width:120px;word-break:break-all;">${bd.matched_list.join(', ')}</span></div>` : ''}
+                        ${bd.missing_list && bd.missing_list.length ? `<div class="bd-row"><span class="bd-label">Gaps</span><span class="bd-value bd-missing" style="text-align:right;max-width:120px;word-break:break-all;">${bd.missing_list.join(', ')}</span></div>` : ''}
+                    </div>
+                ` : '';
 
                 return `
                     <div class="glass job-card" onclick="openDrawer('${j.job_id}')">
@@ -1153,7 +1216,7 @@
                                     <h3 class="job-title">${j.title}</h3>
                                     <div class="job-meta">${j.company} • ${j.location}</div>
                                 </div>
-                                <div class="match-badge">${scorePct}% Match</div>
+                                <div class="match-badge">${scorePct}% Match${breakdownHtml}</div>
                             </div>
                             
                             <div class="progress-wrapper">
