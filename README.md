@@ -2,7 +2,7 @@
 
 A career recommendation engine that matches your skills to relevant jobs using TF-IDF vectorization and cosine similarity, with a Neo4j graph backend and an interactive glassmorphic dashboard.
 
-**Live demo**: [https://job-nexus.onrender.com](https://job-nexus-rt9c.onrender.com/)
+**Live demo**: [https://job-nexus-rt9c.onrender.com](https://job-nexus-rt9c.onrender.com)
 
 ---
 
