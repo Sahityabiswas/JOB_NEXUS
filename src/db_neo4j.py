@@ -3,7 +3,6 @@
 
 import os
 import json
-import ssl
 from neo4j import GraphDatabase
 
 # Load dynamic configuration from config.json if available
@@ -23,9 +22,6 @@ NEO4J_URI = os.getenv("NEO4J_URI", config.get("neo4j_uri", "bolt://localhost:768
 NEO4J_USER = os.getenv("NEO4J_USER", config.get("neo4j_user", "neo4j"))
 NEO4J_PASS = os.getenv("NEO4J_PASS", config.get("neo4j_pass", "YOUR_PASSWORD_HERE"))
 
-# SSL unverified context for +ssc connections
-_ssl_context = ssl._create_unverified_context()
-
 _driver = None
 
 def get_driver():
@@ -34,8 +30,7 @@ def get_driver():
     if _driver is None:
         _driver = GraphDatabase.driver(
             NEO4J_URI,
-            auth=(NEO4J_USER, NEO4J_PASS),
-            ssl_context=_ssl_context
+            auth=(NEO4J_USER, NEO4J_PASS)
         )
     return _driver
 
