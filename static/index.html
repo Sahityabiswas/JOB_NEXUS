@@ -179,6 +179,48 @@
             font-weight: 400;
         }
 
+        .guide-box {
+            margin-top: 40px;
+            padding: 28px 32px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            text-align: left;
+        }
+
+        .guide-box h3 {
+            text-align: center;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            margin-bottom: 18px;
+            font-weight: 700;
+        }
+
+        .guide-box ol {
+            list-style: decimal;
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .guide-box li {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 6px;
+        }
+
+        .guide-box li:last-child {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            .guide-box { padding: 20px 18px; margin-top: 24px; }
+            .guide-box li { font-size: 0.75rem; }
+        }
+
         /* Input styling */
         .input-group {
             margin-bottom: 25px;
@@ -1041,6 +1083,20 @@
             </div>
             
             <button class="btn-action" onclick="runSearch()">Enter Dashboard →</button>
+
+            <div class="guide-box">
+                <h3>── How to Use ──</h3>
+                <ol>
+                    <li>Enter your name in the input box, then add skills by typing or clicking popular skill chips. Autocomplete suggests normalized skills as you type.</li>
+                    <li>Each skill has a B/I/A/E badge — click it to cycle proficiency: Beginner → Intermediate → Advanced → Expert. Higher level gives more weight in matching scores.</li>
+                    <li>Use dropdowns above results to filter by category, location, or company, and sort by match score or job title.</li>
+                    <li>Hover or tap the % badge on any job card to see a breakdown of matched vs missing skills.</li>
+                    <li>Tap any job card to open a detail drawer with full job info and recommended courses for missing skills.</li>
+                    <li>Click "View Graph" to explore the interactive network of your skills, matched jobs, missing skills, and courses.</li>
+                    <li>Click any red missing-skill chip to simulate adding it — scores and the graph update instantly to show the impact.</li>
+                    <li>"Share Link" copies your full profile URL (skills + proficiencies). "PDF Report" downloads your recommendations as a formatted document.</li>
+                </ol>
+            </div>
         </div>
 
         <!-- Dashboard Page (VISION NEXUS) -->
