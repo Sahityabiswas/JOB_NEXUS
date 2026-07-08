@@ -225,19 +225,32 @@
         const SPINNER = document.getElementById('spinner');
         const BTN = document.getElementById('launch-btn');
 
-        let progress = 0;
+        let progressStep = 0;
+        let progressTimer = null;
         let attempts = 0;
         const MAX_ATTEMPTS = 40;
 
         function setProgress(pct, text, cls) {
-            progress = Math.min(pct, 95);
-            PROGRESS.style.width = progress + '%';
+            PROGRESS.style.width = Math.min(pct, 100) + '%';
             STATUS.textContent = text;
             if (cls) STATUS.className = 'status-text ' + cls;
             else STATUS.className = 'status-text';
         }
 
+        function startProgress() {
+            progressStep = 0;
+            progressTimer = setInterval(() => {
+                progressStep = Math.min(progressStep + 1, 100);
+                setProgress(progressStep, `Waking up... ${progressStep}%`);
+            }, 600);
+        }
+
+        function stopProgress() {
+            if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+        }
+
         function done() {
+            stopProgress();
             setProgress(100, '100% — Ready!', 'warm');
             SPINNER.style.display = 'none';
             BTN.style.display = 'inline-block';
@@ -250,16 +263,15 @@
 
         function check() {
             attempts++;
-            const p = Math.min(10 + Math.floor(attempts / 40 * 80), 90);
 
             fetch(TARGET + '/api/skills/all', { mode: 'cors', cache: 'no-store' })
                 .then(r => {
                     if (r.ok) {
                         launch();
                     } else if (attempts < MAX_ATTEMPTS) {
-                        setProgress(p, `Waking up... ${p}%`);
                         setTimeout(check, 2000);
                     } else {
+                        stopProgress();
                         setProgress(95, '95% — Taking longer than usual', 'error');
                         SPINNER.style.display = 'none';
                         BTN.style.display = 'inline-block';
@@ -267,9 +279,9 @@
                 })
                 .catch(() => {
                     if (attempts < MAX_ATTEMPTS) {
-                        setProgress(p, `Waking up... ${p}%`);
                         setTimeout(check, 2000);
                     } else {
+                        stopProgress();
                         setProgress(95, '95% — Taking longer than usual', 'error');
                         SPINNER.style.display = 'none';
                         BTN.style.display = 'inline-block';
@@ -277,6 +289,7 @@
                 });
         }
 
+        startProgress();
         setTimeout(check, 1500);
     </script>
 </body>
