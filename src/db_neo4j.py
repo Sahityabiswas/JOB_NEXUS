@@ -20,7 +20,7 @@ def load_config():
 config = load_config()
 NEO4J_URI = os.getenv("NEO4J_URI", config.get("neo4j_uri", "bolt://localhost:7687"))
 NEO4J_USER = os.getenv("NEO4J_USER", config.get("neo4j_user", "neo4j"))
-NEO4J_PASS = os.getenv("NEO4J_PASS", config.get("neo4j_pass", "YOUR_PASSWORD_HERE"))
+NEO4J_PASS = os.getenv("NEO4J_PASS", config.get("neo4j_pass", ""))
 
 _driver = None
 

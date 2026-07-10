@@ -202,7 +202,7 @@ def save_jobs_partition_to_neo4j(partition_iter):
     cfg = load_cfg()
     uri = os.getenv("NEO4J_URI", cfg.get("neo4j_uri", "bolt://localhost:7687"))
     user = os.getenv("NEO4J_USER", cfg.get("neo4j_user", "neo4j"))
-    pwd = os.getenv("NEO4J_PASS", cfg.get("neo4j_pass", "YOUR_PASSWORD_HERE"))
+    pwd = os.getenv("NEO4J_PASS", cfg.get("neo4j_pass", ""))
     
     driver = GraphDatabase.driver(uri, auth=(user, pwd))
     with driver.session() as session:
@@ -248,7 +248,7 @@ def save_courses_partition_to_neo4j(partition_iter):
     cfg = load_cfg()
     uri = os.getenv("NEO4J_URI", cfg.get("neo4j_uri", "bolt://localhost:7687"))
     user = os.getenv("NEO4J_USER", cfg.get("neo4j_user", "neo4j"))
-    pwd = os.getenv("NEO4J_PASS", cfg.get("neo4j_pass", "YOUR_PASSWORD_HERE"))
+    pwd = os.getenv("NEO4J_PASS", cfg.get("neo4j_pass", ""))
     
     driver = GraphDatabase.driver(uri, auth=(user, pwd))
     with driver.session() as session:
